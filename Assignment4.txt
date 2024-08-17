@@ -1,0 +1,119 @@
+%macro rw 4
+MOV rax,%1
+MOV rdi,%2
+MOV rsi,%3
+MOV rdx,%4
+syscall
+%endmacro
+section .data
+    msg1 db "1->Addition",10,"2->Subtraction",10,"3->Multiplication",10,"4->Division",10,"5->exit";
+    len1 equ $-msg1
+    msg2 db "Enter the choice",10;
+    len2 equ $-msg2
+
+    n1 db 2
+    n2 db 1
+section .bss
+    choice resb 10
+    char_ans resb 5
+section .text
+global _start
+_start:
+    menu:
+    rw 1,1,msg1,len1
+    rw 1,1,msg2,len2
+    rw 0,0,choice,10
+
+    cmp byte[choice],35H
+    je exit
+
+    cmp byte[choice],31H
+    je case1
+    cmp byte[choice],32H
+    je case2
+    cmp byte[choice],33H
+    je case3
+    cmp byte[choice],34H
+    je case4
+
+    jmp menu
+
+case1:
+    call add1
+    jmp menu
+
+case2:
+    call sub1
+    jmp menu
+
+case3:
+    call mul1
+    jmp menu
+
+case4:
+    call div1
+    jmp menu
+
+exit:
+    MOV rax,60  ; Exit system call
+    MOV rdi,0   ; Exit status 0
+    syscall
+   
+    add1:
+    XOR rax,rax
+    XOR rbx,rbx
+    MOV rax,[n1]
+    MOV rbx,[n2]
+    add rax,rbx
+    mov rbx,rax
+    call disp_proc
+    ret
+
+    sub1:
+    XOR rax,rax
+    XOR rbx,rbx
+    MOV rax,[n1]
+    MOV rbx,[n2]
+    sub rax,rbx
+    mov rbx,rax
+    call disp_proc
+    ret
+   
+    mul1:
+    XOR rax,rax
+    XOR rbx,rbx
+    MOV rax,[n1]
+    MOV rbx,[n2]
+    mul rbx
+    mov rbx,rax
+    call disp_proc
+    ret
+
+    div1:
+    XOR rax,rax
+    XOR rbx,rbx
+    MOV al,[n1]
+    MOV bl,[n2]
+    div bl
+    mov rbx,rax
+    call disp_proc
+    ret
+   
+    disp_proc:
+    MOV rbp,char_ans
+    MOV rcx,2
+    up:
+    rol bl,04
+    MOV dl,bl
+    and dl,0FH
+    cmp dl,09H
+    jbe nxt
+    add dl,07H
+    nxt:
+    add dl,30H
+    MOV [rbp],dl
+    inc rbp
+    dec rcx
+    jnz up
+    rw 1,1,char_ans,2
+    ret

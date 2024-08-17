@@ -1,0 +1,52 @@
+%macro func 2
+     mov rax,1
+     mov rdi,1
+     mov rsi,%1
+     mov rdx,%2
+     syscall
+%endmacro
+
+
+Section .data
+     msg1 db "Enter 5 numbers : ",10
+     msg1_l equ $-msg1
+     msg2 db "Entered 5 numbers : ",10
+     msg2_l equ $-msg2  
+     ct1 db 05
+     ct2 db 05    
+     
+Section .bss
+    var resb 85  
+
+Section .text
+global _start
+_start:
+    func msg1,msg1_l
+    mov rbx,0
+    up1:
+         mov rax,00
+         mov rdi,00
+         mov rsi,var
+         add rsi,rbx
+         mov rdx,17
+         syscall
+         add rbx,17
+         dec byte[ct1]
+         jnz up1
+   
+    func msg2,msg2_l    
+    mov rbx,68
+    up2:
+         mov rax,1
+         mov rdi,1
+         mov rsi,var
+         add rsi,rbx
+         mov rdx,17
+         syscall
+         sub rbx,17
+         dec byte[ct2]
+         jnz up2        
+   
+    mov rax,60
+    mov rdi,0
+    syscall 

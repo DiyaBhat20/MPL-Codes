@@ -1,0 +1,115 @@
+%macro rw 4
+  mov rax,%1
+  mov rdi,%2
+  mov rsi,%3
+  mov rdx,%4
+  syscall
+ %endmacro
+ 
+ section .data
+  msg1 db "In Protected Mode",10
+  len1 equ $-msg1
+  msg2 db "In Real Mode",10
+  len2 equ $-msg2
+    msg3 db "GDTR content : "
+  len3 equ $-msg3
+    msg4 db 10,"IDTR content : "
+  len4 equ $-msg4
+    msg5 db 10,"LDTR content : "
+  len5 equ $-msg5
+    msg6 db 10,"TR content : "
+  len6 equ $-msg6
+      msg7 db 10,"CR0 content : "
+  len7 equ $-msg7
+      msg8 db 10,"CPU details : "
+  len8 equ $-msg8
+ 
+ section .bss
+  result resb 2
+  gdtr resb 6
+  ldtr resb 2
+  idtr resb 6
+  tr resb 2
+  CRo_data resb 4
+  CPU_details resb 4
+ 
+ section .text
+ global _start
+ _start:
+ 
+  SMSW eax
+  mov [CRo_data] ,eax
+  BT eax,0
+  JC J1
+  rw 1,1,msg2,len2
+ 
+  J1:
+  rw 1,1,msg1,len1
+ 
+  SGDT [gdtr]
+  SIDT [idtr]
+  SLDT [ldtr]
+  STR [tr]
+ 
+  rw 1,1,msg3,len3
+  mov ax,[gdtr+4]
+  call display_proc
+  mov ax,[gdtr+2]
+  call display_proc
+  mov ax,[gdtr]
+  call display_proc
+ 
+  rw 1,1,msg4,len4
+  mov ax,[idtr+4]
+  call display_proc
+  mov ax,[idtr+2]
+  call display_proc
+  mov ax,[idtr]
+  call display_proc
+ 
+  rw 1,1,msg5,len5
+    mov ax,[ldtr]
+  call display_proc
+ 
+  rw 1,1,msg6,len6
+    mov ax,[tr]
+  call display_proc
+ 
+  rw 1,1,msg7,len7
+  mov rax,[CRo_data+2]
+  call display_proc
+  mov rax,[CRo_data]
+  call display_proc
+ 
+  rw 1,1,msg8,len8
+  mov rax,00
+  CPUID             ;stores content of CPU in rax
+  mov [CPU_details+2],rax
+  call display_proc
+  mov [CPU_details],rax
+  call display_proc
+ 
+  exit:
+  mov rax,60
+  mov rdi,0
+  syscall
+ 
+  display_proc:
+  mov bl,al
+  mov rbp,result
+  mov rcx,2
+  up:
+  rol bl,04
+  mov dl,bl
+  and dl,0FH
+  cmp dl,09H
+  jbe nxt
+  add dl,07H
+  nxt:
+  add dl,30H
+  mov [rbp],dl
+  inc rbp
+  dec cx
+  jnz up
+  rw 1,1,result,2
+  ret
